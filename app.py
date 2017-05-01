@@ -3,8 +3,18 @@ import sys
 import requests
 import requests.packages.urllib3
 import json
+import urllib
+import warnings
+
+# Hide deprecation warnings. The facebook module isn't that up-to-date (facebook.GraphAPIError).
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 requests.packages.urllib3.disable_warnings()
+
+# Parameters of your app
+
+FACEBOOK_APP_ID     = 'YOUR FACEBOOK APP ID'
+FACEBOOK_APP_SECRET = 'YOUR FACEBOOK APP SECRET'
 
 #albumUrl = "https://www.facebook.com/1118241991550593/photos/?tab=album&album_id=1127894767251982"
 albumUrl = str(sys.argv[1])
@@ -17,9 +27,25 @@ except Exception as e:
 	sys.exit(1)
 
 print "Download Album %s" % (album)
-facebook_token = "EAAYmMthewQsBAD2KcTar6h7DEfXPZATLFZBvqdu5N6XI2JkkyPx7W3pCgyXReIQ3xcD4hVT3YHUtmWweGjYq4pGi0ZCA3O3J7JmhJ8Ir81oMj4weYoJssWobVwkueB4KBZAceJsIEmGaSEGPflSJ5VvSCZBzBBIYZD"
 
-def setAlbumUrl(albumId):
+def generateToken():
+	# Trying to get an access token.
+	oauth_args = dict(client_id     = FACEBOOK_APP_ID,
+	                  client_secret = FACEBOOK_APP_SECRET,
+	                  grant_type    = 'client_credentials')
+	oauthURL = 'https://graph.facebook.com/oauth/access_token?' + urllib.urlencode(oauth_args)
+
+	try:
+		loadOauth = requests.get(oauthURL)
+		parseOauth = json.loads(loadOauth.content)
+		facebook_access_token = parseOauth['access_token']
+	except KeyError:
+	    print('Unable to grab an access token!')
+	    exit()
+
+	return facebook_access_token
+
+def setAlbumUrl(albumId, facebook_token):
 	setUrlAlbum = "https://graph.facebook.com/v2.8/%s/photos?access_token=%s&limit=100" % (albumId, facebook_token)
 
 	getPaging = requests.get(setUrlAlbum)
@@ -30,7 +56,7 @@ def setAlbumUrl(albumId):
 
 	if "next" in nextPage:
 		albumURL.append(loadURL['paging']['next'])
-	
+
 	while "next" in nextPage:
 		getPaging = requests.get(setUrlAlbum)
 		loadURL = json.loads(getPaging.content)
@@ -47,19 +73,19 @@ def getPhotosId(setAlbumUrl):
 	for albumURL in setAlbumUrl:
 		try:
 			getPhotos = requests.get(albumURL)
-			setIdPhotosJson = json.loads(getPhotos.content)	
-			
+			setIdPhotosJson = json.loads(getPhotos.content)
+
 			for id in setIdPhotosJson['data']:
 				idPhotos = id['id']
 				PhotosId.append(idPhotos)
 		except requests.exceptions.RequestException as e:  # This is the correct syntax
 		    print e
 		    sys.exit(1)
-		    
+
 	return PhotosId
 
-def getPhotosURL(getPhotosId):
-	photosURL = []	
+def getPhotosURL(getPhotosId, facebook_token):
+	photosURL = []
 	for photosId in getPhotosId:
 		photoId = photosId
 		setUrlPhoto = "https://graph.facebook.com/v2.8/%s/picture?access_token=%s" % (photoId, facebook_token)
@@ -67,10 +93,11 @@ def getPhotosURL(getPhotosId):
 	return photosURL
 
 def downloadAlbum(albumId):
-	albumURL = setAlbumUrl(albumId)
+	facebook_token = generateToken()
+	albumURL = setAlbumUrl(albumId, facebook_token)
 
 	photoId = getPhotosId(albumURL)
-	photoURL = getPhotosURL(photoId)
+	photoURL = getPhotosURL(photoId, facebook_token)
 	print "Download %i photos" %(len(photoId))
 	number = 0
 
@@ -97,7 +124,7 @@ def downloadAlbum(albumId):
 			nameImage = "%s/%s.%s" %(albumId,number,imageType)
 
 			print "Please Wait %s while downloading...."%(nameImage)
-			
+
 			with open(nameImage, 'wb') as handle:
 			        if not response.ok:
 			            print response
@@ -120,5 +147,3 @@ def downloadAlbum(albumId):
 # photoid = getPhotosId(albumurl)
 if __name__ == "__main__":
 	downloadAlbum(album)
-
-
