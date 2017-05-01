@@ -15,10 +15,13 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 requests.packages.urllib3.disable_warnings()
 
-# Parameters of your app
+# load config file
+with open('config.json') as json_data_file:
+	data = json.load(json_data_file)
 
-FACEBOOK_APP_ID     = 'YOUR FACEBOOK APP ID'
-FACEBOOK_APP_SECRET = 'YOUR FACEBOOK APP SECRET'
+# Parameters of your app
+FACEBOOK_APP_ID     = data['FACEBOOK_APP_ID']
+FACEBOOK_APP_SECRET = data['FACEBOOK_APP_SECRET']
 
 #albumUrl = "https://www.facebook.com/1118241991550593/photos/?tab=album&album_id=1127894767251982"
 albumUrl = str(sys.argv[1])

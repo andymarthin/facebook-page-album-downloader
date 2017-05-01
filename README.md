@@ -2,6 +2,10 @@
 
 ## Run app
 
-`python app.py "url facebook album"`
+  rename sample.config.json to config.json
 
-Example : `python app.py "https://www.facebook.com/1118241991550593/photos/?tab=album&album_id=1127894767251982"`
+  setup your facebook id app and facebook app secret in config.json
+
+  `python app.py "url facebook album"`
+
+  Example : `python app.py "https://www.facebook.com/1118241991550593/photos/?tab=album&album_id=1127894767251982"`
