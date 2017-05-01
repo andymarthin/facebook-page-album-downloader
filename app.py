@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import sys
 import requests
@@ -5,6 +7,8 @@ import requests.packages.urllib3
 import json
 import urllib
 import warnings
+from time import sleep
+import time
 
 # Hide deprecation warnings. The facebook module isn't that up-to-date (facebook.GraphAPIError).
 warnings.filterwarnings('ignore', category=DeprecationWarning)
@@ -45,9 +49,28 @@ def generateToken():
 
 	return facebook_access_token
 
+def progress(count, total, status=''):
+    bar_len = 60
+    filled_len = int(round(bar_len * count / float(total)))
+
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+    sys.stdout.write('[%s] %s%s %s\r' % (bar, percents, '%', status))
+    sys.stdout.flush()
+
+
+def setAlbumName(albumId, facebook_token):
+	# Trying get Album Name
+	setUrlAlbum = "https://graph.facebook.com/v2.8/%s/?access_token=%s" % (albumId, facebook_token)
+	getAlbumName = requests.get(setUrlAlbum)
+	loadAlbumName = json.loads(getAlbumName.content)
+	albumName = loadAlbumName['name']
+
+	return albumName
+
 def setAlbumUrl(albumId, facebook_token):
 	setUrlAlbum = "https://graph.facebook.com/v2.8/%s/photos?access_token=%s&limit=100" % (albumId, facebook_token)
-
 	getPaging = requests.get(setUrlAlbum)
 	loadURL = json.loads(getPaging.content)
 	albumURL = []
@@ -95,21 +118,23 @@ def getPhotosURL(getPhotosId, facebook_token):
 def downloadAlbum(albumId):
 	facebook_token = generateToken()
 	albumURL = setAlbumUrl(albumId, facebook_token)
-
+	albumName = setAlbumName(albumId, facebook_token)
+	print "Fetch data From Facebook..."
 	photoId = getPhotosId(albumURL)
 	photoURL = getPhotosURL(photoId, facebook_token)
+
 	print "Download %i photos" %(len(photoId))
 	number = 0
 
-	if not os.path.exists(albumId):
-		os.makedirs(albumId)
+	if not os.path.exists(albumName):
+		os.makedirs(albumName)
 
 	for image in photoURL:
 		try:
 
 			number += 1
-			chekImageJPG = "%s/%s.jpg" %(albumId,number)
-			chekImagePNG = "%s/%s.png" %(albumId,number)
+			chekImageJPG = "%s/%s.jpg" %(albumName,number)
+			chekImagePNG = "%s/%s.png" %(albumName,number)
 			if os.path.exists(chekImageJPG) or os.path.exists(chekImagePNG):
 				continue
 
@@ -121,9 +146,10 @@ def downloadAlbum(albumId):
 			elif contentType.startswith('image/jpeg'):
 				imageType = "jpg"
 
-			nameImage = "%s/%s.%s" %(albumId,number,imageType)
+			nameImage = "%s/%s.%s" %(albumName,number,imageType)
 
-			print "Please Wait %s while downloading...."%(nameImage)
+			# print "Please Wait %s while downloading...."%(nameImage)
+			progress(number, len(photoId), status=nameImage)
 
 			with open(nameImage, 'wb') as handle:
 			        if not response.ok:
@@ -139,7 +165,8 @@ def downloadAlbum(albumId):
 			os.remove(nameImage)
 			sys.exit(1)
 
-	print "Finish Download %i photos" %(len(photoId))
+	sys.stdout.write("Finish Download %i photos" %(len(photoId)))
+	# sys.stdout.write("\n")
 	return "finish"
 
 
@@ -147,3 +174,4 @@ def downloadAlbum(albumId):
 # photoid = getPhotosId(albumurl)
 if __name__ == "__main__":
 	downloadAlbum(album)
+	# testProgressbar()
