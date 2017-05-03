@@ -8,6 +8,7 @@ import json
 import urllib
 import warnings
 import time
+from tqdm import tqdm
 
 # hide ssl warning
 requests.packages.urllib3.disable_warnings()
@@ -51,17 +52,6 @@ def generateToken():
 	    exit()
 
 	return facebook_access_token
-
-def progress(count, total, status=''):
-    bar_len = 60
-    filled_len = int(round(bar_len * count / float(total)))
-
-    percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
-
-    sys.stdout.write('[%s] %s%s %s\r' % (bar, percents, '%', status))
-    sys.stdout.flush()
-
 
 def setAlbumName(albumId, facebook_token):
 	# Trying get Album Name
@@ -155,18 +145,22 @@ def downloadAlbum(albumId):
 
 			nameImage = "%s/%s.%s" %(albumName,number,imageType)
 
-			# print "Please Wait %s while downloading...."%(nameImage)
-			progress(number, len(photoId), status=nameImage)
+			print "%s  downloading...."%(nameImage)
+			# progress(number, len(photoId), status=nameImage)
 
+			# Total size in bytes.
+			total_size = int(response.headers.get('content-length', 0));
 			with open(nameImage, 'wb') as handle:
 			        if not response.ok:
 			            print response
 
-			        for block in response.iter_content(1024):
+			        for block in tqdm(response.iter_content(), total=total_size, unit='B', unit_scale=True):
+
 			            if not block:
 			                break
 
 			            handle.write(block)
+
 		except requests.exceptions.RequestException as e:  # This is the correct syntax
 			print e
 			os.remove(nameImage)
@@ -180,6 +174,9 @@ if __name__ == "__main__":
 
 	try:
 		downloadAlbum(album)
+	except requests.exceptions.HTTPError as err:
+		print err
+		exit()
 	except KeyboardInterrupt:
 		print "Good Bye~"
 		pass
