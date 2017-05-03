@@ -7,33 +7,33 @@ import requests.packages.urllib3
 import json
 import urllib
 import warnings
-from time import sleep
 import time
 
-# Hide deprecation warnings. The facebook module isn't that up-to-date (facebook.GraphAPIError).
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-
+# hide ssl warning
 requests.packages.urllib3.disable_warnings()
 
 # load config file
-with open('config.json') as json_data_file:
-	data = json.load(json_data_file)
+try:
+	with open('config.json') as json_data_file:
+		data = json.load(json_data_file)
+except IOError as e:
+	print "config.json not found!"
+	exit()
 
 # Parameters of your app
 FACEBOOK_APP_ID     = data['FACEBOOK_APP_ID']
 FACEBOOK_APP_SECRET = data['FACEBOOK_APP_SECRET']
 
 #albumUrl = "https://www.facebook.com/1118241991550593/photos/?tab=album&album_id=1127894767251982"
-albumUrl = str(sys.argv[1])
 
-albumId = albumUrl.split("album_id=",1)
+
 try:
+	albumUrl = str(sys.argv[1])
+	albumId = albumUrl.split("album_id=",1)
 	album = albumId[1]
 except Exception as e:
 	print "Album ID not found"
-	sys.exit(1)
-
-print "Download Album %s" % (album)
+	exit()
 
 def generateToken():
 	# Trying to get an access token.
@@ -47,7 +47,7 @@ def generateToken():
 		parseOauth = json.loads(loadOauth.content)
 		facebook_access_token = parseOauth['access_token']
 	except KeyError:
-	    print('Unable to grab an access token!')
+	    print "Unable to grab an access token!"
 	    exit()
 
 	return facebook_access_token
@@ -122,7 +122,10 @@ def downloadAlbum(albumId):
 	facebook_token = generateToken()
 	albumURL = setAlbumUrl(albumId, facebook_token)
 	albumName = setAlbumName(albumId, facebook_token)
+
 	print "Fetch data From Facebook..."
+	print "Download Album %s" % (albumName)
+
 	photoId = getPhotosId(albumURL)
 	photoURL = getPhotosURL(photoId, facebook_token)
 
@@ -130,6 +133,7 @@ def downloadAlbum(albumId):
 	number = 0
 
 	if not os.path.exists(albumName):
+		print "Create Folder %s" %(albumName)
 		os.makedirs(albumName)
 
 	for image in photoURL:
@@ -169,12 +173,13 @@ def downloadAlbum(albumId):
 			sys.exit(1)
 
 	sys.stdout.write("Finish Download %i photos" %(len(photoId)))
-	# sys.stdout.write("\n")
+	sys.stdout.write("\n")
 	return "finish"
 
-
-# albumurl = setAlbumUrl(album)
-# photoid = getPhotosId(albumurl)
 if __name__ == "__main__":
-	downloadAlbum(album)
-	# testProgressbar()
+
+	try:
+		downloadAlbum(album)
+	except KeyboardInterrupt:
+		print "Good Bye~"
+		pass
