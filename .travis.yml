@@ -9,4 +9,4 @@ install:
   - pip install -r requirements.txt
 
 script:
-  - run app.py "https://web.facebook.com/1667667110148885/photos/?tab=album&album_id=1710747939174135"
+  - python app.py "https://web.facebook.com/1667667110148885/photos/?tab=album&album_id=1710747939174135"
