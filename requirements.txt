@@ -1,4 +1,2 @@
 requests
 tqdm
-urllib
-json
