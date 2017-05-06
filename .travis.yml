@@ -11,8 +11,8 @@ install:
 script:
   - touch config.json
   - echo "{" >> config.json
-  - echo ""FACEBOOK_APP_ID" : "YOUR FACEBOOK APP ID"," >> config.json
-  - echo ""FACEBOOK_APP_SECRET" : "YOUR FACEBOOK APP SECRET"" >> config.json
+  - echo "'FACEBOOK_APP_ID' : 'YOUR FACEBOOK APP ID'," >> config.json
+  - echo "'FACEBOOK_APP_SECRET' : 'YOUR FACEBOOK APP SECRET'" >> config.json
   - echo "}" >> config.json
   - python app.py "https://web.facebook.com/1667667110148885/photos/?tab=album&album_id=1710747939174135"
 
